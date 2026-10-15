@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Explore Career Paths{% endblock %}
+
+{% block content %}
+<div class="container careers-container">
+    <!-- Header -->
+    <div class="careers-header">
+        <div>
+            <h1 class="page-title">Explore Career Paths</h1>
+            <p class="page-subtitle">
+                Select your target career track to assess your readiness and unlock your personalized learning roadmap.
+            </p>
+        </div>
+        {% if current_selection %}
+        <div class="current-selection-banner">
+            <span class="selection-label">Active Career:</span>
+            <span class="career-badge-inline">{{ current_selection['career_path'] }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Career Cards Grid -->
+    <div class="careers-grid-catalog">
+        {% for career in careers %}
+        <div class="career-catalog-card {% if current_selection and (current_selection['career_id'] == career['id'] or current_selection['career_path'] == career['title']) %}is-selected{% endif %}">
+            <div class="career-card-top">
+                <div class="career-icon-wrapper">{{ career['icon'] }}</div>
+                {% if current_selection and (current_selection['career_id'] == career['id'] or current_selection['career_path'] == career['title']) %}
+                <span class="active-tag">Active Target</span>
+                {% endif %}
+            </div>
+
+            <h2 class="career-title">{{ career['title'] }}</h2>
+            <p class="career-desc">{{ career['description'] }}</p>
+
+            <div class="career-meta">
+                <div class="meta-item">
+                    <span class="meta-number">{{ career['skill_count'] }}</span>
+                    <span class="meta-label">Total Skills</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-number">{{ career['core_skill_count'] }}</span>
+                    <span class="meta-label">Core Skills</span>
+                </div>
+            </div>
+
+            <div class="career-card-actions">
+                <a href="{{ url_for('main.career_detail', career_code=career['code']) }}" class="btn btn-outline btn-sm">
+                    View Requirements
+                </a>
+
+                {% if current_selection and (current_selection['career_id'] == career['id'] or current_selection['career_path'] == career['title']) %}
+                <button type="button" class="btn btn-sm btn-disabled" disabled>
+                    ✓ Selected
+                </button>
+                {% else %}
+                <form method="POST" action="{{ url_for('main.select_career') }}" class="select-career-form">
+                    <input type="hidden" name="career_id" value="{{ career['id'] }}">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        {% if current_selection %}Switch to This{% else %}Select Career{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Career Selection History -->
+    {% if history and history|length > 0 %}
+    <div class="career-history-section">
+        <h2 class="history-title">Career Selection History</h2>
+        <p class="history-desc">Skillora preserves your career journey history across shifts and explorations.</p>
+        <div class="history-list">
+            {% for entry in history %}
+            <div class="history-item {% if entry['is_active'] %}history-active{% endif %}">
+                <div class="history-info">
+                    <span class="history-icon">{{ entry['icon'] or '🎯' }}</span>
+                    <div>
+                        <strong class="history-career">{{ entry['career_path'] }}</strong>
+                        <span class="history-time">{{ entry['selected_at'] }}</span>
+                    </div>
+                </div>
+                <div>
+                    {% if entry['is_active'] %}
+                    <span class="status-pill status-active">Current Target</span>
+                    {% else %}
+                    <span class="status-pill status-archived">Archived</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Career Readiness Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <h1 class="hero-title">Bridge the Gap Between<br>Learning and <span class="text-accent">Career Readiness</span></h1>
+        <p class="hero-subtitle">
+            Skillora helps you identify skill gaps, follow personalized learning roadmaps,
+            and track your progress toward your dream career.
+        </p>
+        <div class="hero-actions">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started Free</a>
+            <a href="{{ url_for('main.demo_login') }}" class="btn btn-outline btn-lg">Try Demo →</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Everything You Need to Get Career-Ready</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧭</div>
+                <h3>Career Path Explorer</h3>
+                <p>Explore six in-demand career paths and understand what skills each requires.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Skill Gap Analysis</h3>
+                <p>Assess your current skills and discover exactly where you need to grow.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗺️</div>
+                <h3>Personalized Roadmap</h3>
+                <p>Follow a structured Learn → Practice → Build → Review pathway tailored to your goals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Progress Tracking</h3>
+                <p>Monitor your growth with detailed analytics and milestone tracking.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Supported Careers Section -->
+<section class="careers-preview">
+    <div class="container">
+        <h2 class="section-title">Supported Career Paths</h2>
+        <div class="careers-grid">
+            <div class="career-badge">💻 Frontend Developer</div>
+            <div class="career-badge">⚙️ Backend Developer</div>
+            <div class="career-badge">🔗 Full-Stack Developer</div>
+            <div class="career-badge">📊 Data Analyst</div>
+            <div class="career-badge">🎨 UI/UX Designer</div>
+            <div class="career-badge">🧪 Software QA Engineer</div>
+        </div>
+    </div>
+</section>
+{% endblock %}

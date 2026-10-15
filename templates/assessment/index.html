@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Skill Assessments{% endblock %}
+
+{% block content %}
+<div class="container assessment-container">
+    <!-- Header -->
+    <div class="assessment-header">
+        <div>
+            <h1 class="page-title">Skill Assessments</h1>
+            <p class="page-subtitle">
+                Validate your capabilities with skill-specific quizzes and self-evaluations to compute your career readiness score.
+            </p>
+        </div>
+        {% if active_career %}
+        <div class="current-selection-banner">
+            <span class="selection-label">Target Career:</span>
+            <span class="career-badge-inline">{{ active_career['icon'] or '🎯' }} {{ active_career['career_path'] }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not active_career %}
+    <div class="card empty-state-card" style="text-align: center; padding: 3rem 1.5rem; margin-bottom: 2rem;">
+        <div class="empty-state-icon">🧭</div>
+        <h2 style="color: var(--color-primary); margin-bottom: 0.5rem;">Select a Career Track First</h2>
+        <p style="color: var(--color-text-muted); max-width: 480px; margin: 0 auto 1.5rem;">
+            Assessments are mapped specifically to career requirements. Choose your target career to view your custom assessment list.
+        </p>
+        <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-md">Explore Careers →</a>
+    </div>
+    {% else %}
+
+    <!-- Readiness & Coverage KPI Card -->
+    {% if readiness %}
+    <div class="readiness-card card" style="margin-bottom: 2.5rem;">
+        <div class="readiness-header-row">
+            <div>
+                <span class="readiness-kpi-label">Target Career Readiness</span>
+                <div class="readiness-kpi-val-row">
+                    <span class="readiness-kpi-number">{{ readiness['readiness_score'] }}%</span>
+                    {% if readiness['is_provisional'] %}
+                    <span class="provisional-pill" title="Readiness is provisional until coverage reaches 70%">
+                        ⚠️ Provisional (&lt; 70% Coverage)
+                    </span>
+                    {% else %}
+                    <span class="status-pill status-active">✓ Verified Readiness</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="coverage-stat-box">
+                <span class="coverage-label">Assessment Coverage</span>
+                <span class="coverage-val">{{ readiness['coverage_percentage'] }}%</span>
+                <span class="coverage-sub">{{ readiness['assessed_skills_count'] }} of {{ readiness['total_skills_count'] }} skills assessed</span>
+            </div>
+        </div>
+
+        <div class="mini-bar-track" style="height: 10px; margin: 1.25rem 0;">
+            <div class="mini-bar-fill" style="width: {{ readiness['readiness_score'] }}%;"></div>
+        </div>
+
+        <p class="readiness-explanation">
+            <strong>Scoring Policy:</strong> Readiness represents importance-weighted skill attainment capped at each skill's target requirement level ($E_i / T_i$).
+            Unassessed skills are excluded from readiness, and coverage is calculated separately.
+            Initial skill estimates use $S = 0.7Q + 0.3A$.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Skills Assessment Grid / Table -->
+    <div class="skills-assessment-section">
+        <h2 class="section-title-left" style="margin-bottom: 1.25rem;">Required Skills for {{ active_career['career_path'] }}</h2>
+        <div class="requirements-table-wrapper card">
+            <table class="requirements-table">
+                <thead>
+                    <tr>
+                        <th>Skill</th>
+                        <th>Classification</th>
+                        <th>Target Level</th>
+                        <th>Current Estimate</th>
+                        <th>Assessment Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in skills %}
+                    <tr>
+                        <td>
+                            <div class="skill-name-col">
+                                <span class="skill-title">{{ s['skill_name'] }}</span>
+                                <span class="skill-desc">{{ s['category'] }} &bull; Weight: {{ s['importance_weight'] }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if s['is_core'] == 1 %}
+                            <span class="badge-core">Core</span>
+                            {% else %}
+                            <span class="badge-supplementary">Supplementary</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="level-badge">Target: Level {{ s['target_level'] }}</span>
+                        </td>
+                        <td>
+                            {% if s['current_estimate'] %}
+                            <div class="estimate-col">
+                                <span class="estimate-value">Level {{ s['current_estimate'] }}</span>
+                                <span class="estimate-sub">
+                                    Q: {{ s['quiz_proficiency'] }} | A: {{ s['self_assessed_level'] or '—' }}
+                                </span>
+                            </div>
+                            {% else %}
+                            <span class="unassessed-tag">Level 0 (Unassessed)</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if s['attempt_count'] > 0 %}
+                            <span class="attempt-badge">{{ s['attempt_count'] }} completed attempt{% if s['attempt_count'] > 1 %}s{% endif %}</span>
+                            {% elif s['question_count'] > 0 %}
+                            <span class="status-pill" style="background: var(--color-info-bg); color: var(--color-info);">Ready to test</span>
+                            {% else %}
+                            <span class="status-pill status-archived">Coming soon</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if s['question_count'] > 0 %}
+                            <a href="{{ url_for('assessment.take_assessment', skill_code=s['skill_code']) }}" class="btn btn-primary btn-sm">
+                                {% if s['attempt_count'] > 0 %}Reassess{% else %}Take Assessment{% endif %}
+                            </a>
+                            {% else %}
+                            <button class="btn btn-sm btn-disabled" disabled title="Question bank for this skill is in preparation">
+                                Coming Soon
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Assessment History -->
+    {% if recent_attempts and recent_attempts|length > 0 %}
+    <div class="career-history-section" style="margin-top: 3rem;">
+        <h2 class="history-title">Your Assessment Attempt History</h2>
+        <p class="history-desc">Skillora preserves complete attempt history across re-assessments without erasing records.</p>
+        <div class="history-list">
+            {% for a in recent_attempts %}
+            <div class="history-item">
+                <div class="history-info">
+                    <span class="history-icon">📝</span>
+                    <div>
+                        <strong class="history-career">{{ a['skill_name'] }}</strong>
+                        <span class="history-time">{{ a['completed_at'] }} &bull; Score: {{ a['correct_count'] }}/{{ a['total_questions'] }} ({{ a['score_percentage'] }}%) &bull; Quiz Level: {{ a['quiz_proficiency'] }}</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    {% if a['has_discrepancy'] %}
+                    <span class="discrepancy-pill" title="Discrepancy detected between quiz and self-assessment">⚠️ Discrepancy</span>
+                    {% endif %}
+                    <a href="{{ url_for('assessment.view_attempt', attempt_id=a['id']) }}" class="btn btn-outline btn-sm">
+                        View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if roadmap %}{{ roadmap['career']['title'] }} Roadmap{% else %}Learning Roadmap{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; padding: 2rem 1rem 4rem;">
+
+    {% if not roadmap or not active_career %}
+        <!-- Empty State: No Career Selected -->
+        <div class="empty-state" style="background: var(--color-surface); padding: 3rem 2rem; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; margin-top: 2rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 1rem;">🗺️</div>
+            <h1 style="font-size: 1.75rem; color: var(--color-primary); margin-bottom: 0.5rem;">Select a Career to Generate Your Roadmap</h1>
+            <p style="color: var(--color-text-muted); max-width: 540px; margin: 0 auto 1.5rem; line-height: 1.6;">
+                Skillora personalizes your learning pathway using your target career requirements, prerequisite ordering, and verified skill assessments across four structured stages: <strong>Learn → Practice → Build → Review</strong>.
+            </p>
+            <a href="{{ url_for('main.careers') }}" class="btn btn-primary">
+                Explore &amp; Select Career →
+            </a>
+        </div>
+    {% else %}
+        <!-- Breadcrumb / Header Navigation -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <a href="{{ url_for('main.dashboard') }}" style="font-size: 0.9rem; color: var(--color-text-muted); display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
+                    &larr; Back to Dashboard
+                </a>
+                <h1 style="display: flex; align-items: center; gap: 0.6rem; font-size: 1.85rem; color: var(--color-primary);">
+                    <span>{{ roadmap['career']['icon'] }}</span>
+                    <span>{{ roadmap['career']['title'] }} Roadmap</span>
+                </h1>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem; margin-top: 0.2rem;">
+                    {{ roadmap['career']['description'] }}
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <form action="{{ url_for('roadmap.regenerate') }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-outline btn-sm" title="Refresh roadmap recommendations based on your latest assessment estimates while keeping completed tasks">
+                        🔄 Refresh Recommendations
+                    </button>
+                </form>
+                <a href="{{ url_for('main.careers') }}" class="btn btn-outline btn-sm">
+                    Switch Career
+                </a>
+            </div>
+        </div>
+
+        <!-- Provisional Alert Banner -->
+        {% if roadmap['is_provisional'] %}
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+            <span style="font-size: 1.5rem; line-height: 1;">⚠️</span>
+            <div style="font-size: 0.9rem; color: #92400e;">
+                <strong style="color: #78350f;">Provisional Roadmap Notice:</strong>
+                {{ roadmap['unassessed_count'] }} required skills remain unassessed (current assessment coverage: <strong>{{ roadmap['coverage_percentage'] }}%</strong>).
+                Foundational learning modules are recommended below. Complete your <a href="{{ url_for('assessment.index') }}" style="color: #b45309; text-decoration: underline; font-weight: 600;">skill assessments</a> to tailor this roadmap directly to your verified skill gaps.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Overall Progress Dashboard Card -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+                        Overall Roadmap Completion
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.2;">
+                        {{ roadmap['overall_progress'] }}%
+                        <span style="font-size: 0.95rem; font-weight: 400; color: var(--color-text-muted);">
+                            ({{ roadmap['completed_tasks'] }} of {{ roadmap['total_tasks'] }} tasks completed)
+                        </span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    {% if roadmap['readiness'] %}
+                    <span style="font-size: 0.8rem; background: var(--color-bg-alt); padding: 0.35rem 0.65rem; border-radius: 9999px; color: var(--color-primary); font-weight: 600;">
+                        Readiness: {{ roadmap['readiness']['readiness_score'] }}%
+                    </span>
+                    <span style="font-size: 0.8rem; background: var(--color-bg-alt); padding: 0.35rem 0.65rem; border-radius: 9999px; color: var(--color-text-muted); font-weight: 500;">
+                        Coverage: {{ roadmap['coverage_percentage'] }}%
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mini-bar-track" style="height: 10px; border-radius: 9999px; background: var(--color-border-light); overflow: hidden; margin-bottom: 1.25rem;">
+                <div class="mini-bar-fill" style="width: {{ roadmap['overall_progress'] }}%; height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-accent)); transition: width 0.3s ease;"></div>
+            </div>
+
+            <!-- Stage Progress Indicator Pills -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+                {% for s_key, s_data in roadmap['stages'].items() %}
+                <a href="#stage-{{ s_key }}" style="text-decoration: none; color: inherit; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; transition: transform var(--transition), border-color var(--transition);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.25rem;">{{ s_data['icon'] }}</span>
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">{{ s_data['title'] }}</div>
+                            <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ s_data['completed'] }}/{{ s_data['total'] }} tasks</div>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: {% if s_data['progress'] == 100 %}var(--color-success){% else %}var(--color-primary){% endif %};">
+                        {{ s_data['progress'] }}%
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Next Recommended Task Highlight -->
+        {% if roadmap['next_recommended_task'] %}
+        {% set ntask = roadmap['next_recommended_task'] %}
+        <div style="background: linear-gradient(135deg, rgba(49, 46, 129, 0.04), rgba(249, 115, 22, 0.05)); border: 1.5px solid rgba(49, 46, 129, 0.15); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="max-width: 650px;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--color-accent); color: white; padding: 0.15rem 0.5rem; border-radius: 4px;">
+                        Recommended Next Step
+                    </span>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">
+                        Stage: <strong>{{ ntask['stage']|title }}</strong> &bull; ⏱️ {{ ntask['estimated_duration'] }}
+                    </span>
+                </div>
+                <h3 style="font-size: 1.15rem; color: var(--color-primary); margin-bottom: 0.35rem;">
+                    {{ ntask['title'] }}
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.4; margin: 0;">
+                    {{ ntask['description'] }}
+                </p>
+                {% if ntask['reason'] %}
+                <div style="font-size: 0.8rem; color: var(--color-primary-light); font-weight: 500; margin-top: 0.35rem;">
+                    💡 {{ ntask['reason'] }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <form action="{{ url_for('roadmap.toggle_task', task_id=ntask['id']) }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap;">
+                        ✓ Mark as Completed
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 4 Structured Stages: Learn -> Practice -> Build -> Review -->
+        {% for s_key, s_data in roadmap['stages'].items() %}
+        <section id="stage-{{ s_key }}" style="margin-bottom: 2.5rem; scroll-margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid var(--color-border); padding-bottom: 0.65rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.5rem;">{{ s_data['icon'] }}</span>
+                    <div>
+                        <h2 style="font-size: 1.35rem; color: var(--color-primary); margin: 0;">
+                            Stage {{ loop.index }}: {{ s_data['title'] }}
+                        </h2>
+                        <span style="font-size: 0.8rem; color: var(--color-text-muted);">
+                            {% if s_key == 'learn' %}
+                                Foundational concepts, syntax, official documentation, and guided reading.
+                            {% elif s_key == 'practice' %}
+                                Hands-on problem sets, code drills, and interactive application.
+                            {% elif s_key == 'build' %}
+                                Culminating portfolio and capstone project milestone integrating core skills.
+                            {% elif s_key == 'review' %}
+                                Best-practices audit, self-reflection checklist, and skill reassessment.
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge" style="font-size: 0.8rem; background: {% if s_data['progress'] == 100 %}var(--color-success-bg){% else %}var(--color-bg-alt){% endif %}; color: {% if s_data['progress'] == 100 %}var(--color-success){% else %}var(--color-primary){% endif %}; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 9999px;">
+                        {{ s_data['completed'] }}/{{ s_data['total'] }} Done ({{ s_data['progress'] }}%)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Task List for Stage -->
+            <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                {% for task in s_data['tasks'] %}
+                <div class="roadmap-task-card" style="background: var(--color-surface); border: 1px solid {% if task['is_completed'] %}#bbf7d0{% else %}var(--color-border){% endif %}; border-radius: var(--radius-sm); padding: 1.15rem 1.25rem; box-shadow: var(--shadow); display: flex; gap: 1rem; align-items: flex-start; transition: border-color var(--transition), box-shadow var(--transition); opacity: {% if task['is_completed'] %}0.85{% else %}1{% endif %};">
+                    
+                    <!-- Toggle Checkbox Form -->
+                    <form action="{{ url_for('roadmap.toggle_task', task_id=task['id']) }}" method="POST" style="margin: 0; padding-top: 0.2rem;">
+                        <button type="submit" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;" title="{% if task['is_completed'] %}Click to reopen task{% else %}Click to mark task complete{% endif %}">
+                            <span style="display: inline-flex; width: 22px; height: 22px; border-radius: 6px; border: 2px solid {% if task['is_completed'] %}var(--color-success){% else %}var(--color-border){% endif %}; background: {% if task['is_completed'] %}var(--color-success){% else %}white{% endif %}; color: white; font-size: 13px; font-weight: bold; align-items: center; justify-content: center; transition: all var(--transition);">
+                                {% if task['is_completed'] %}✓{% endif %}
+                            </span>
+                        </button>
+                    </form>
+
+                    <!-- Task Body -->
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <h4 style="font-size: 1rem; margin: 0; color: {% if task['is_completed'] %}var(--color-text-muted){% else %}var(--color-text){% endif %}; {% if task['is_completed'] %}text-decoration: line-through;{% endif %}">
+                                    {{ task['title'] }}
+                                </h4>
+                                {% if task['is_project'] %}
+                                <span style="font-size: 0.7rem; font-weight: 700; background: var(--color-accent-light); color: var(--color-accent); border: 1px solid #fed7aa; padding: 0.15rem 0.45rem; border-radius: 4px;">
+                                    🛠️ Milestone Project
+                                </span>
+                                {% endif %}
+                                {% if task['skill_name'] %}
+                                <span style="font-size: 0.7rem; font-weight: 600; background: var(--color-bg); color: var(--color-text-muted); border: 1px solid var(--color-border); padding: 0.15rem 0.45rem; border-radius: 4px;">
+                                    🎯 {{ task['skill_name'] }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--color-text-muted); white-space: nowrap;">
+                                ⏱️ {{ task['estimated_duration'] }}
+                            </span>
+                        </div>
+
+                        <p style="font-size: 0.875rem; color: var(--color-text); line-height: 1.5; margin-bottom: 0.5rem;">
+                            {{ task['description'] }}
+                        </p>
+
+                        <!-- Context / Reason Explanation -->
+                        {% if task['reason'] %}
+                        <div style="font-size: 0.8rem; color: var(--color-primary-light); margin-bottom: 0.6rem; display: flex; align-items: baseline; gap: 0.35rem;">
+                            <span>💡</span>
+                            <span>{{ task['reason'] }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Verified Resource Link -->
+                        {% if task['resource_url'] and task['resource_title'] %}
+                        <div style="margin-top: 0.5rem;">
+                            {% if task['resource_url'].startswith('http') %}
+                            <a href="{{ task['resource_url'] }}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary); background: var(--color-bg-alt); padding: 0.25rem 0.6rem; border-radius: var(--radius-xs); border: 1px solid #c7d2fe; text-decoration: none;">
+                                <span>📖 {{ task['resource_title'] }}</span>
+                                <span style="font-size: 0.7rem;">↗</span>
+                            </a>
+                            {% else %}
+                            <a href="{{ task['resource_url'] }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 500; color: var(--color-primary); background: var(--color-bg-alt); padding: 0.25rem 0.6rem; border-radius: var(--radius-xs); border: 1px solid #c7d2fe; text-decoration: none;">
+                                <span>🎯 {{ task['resource_title'] }}</span>
+                                <span style="font-size: 0.7rem;">&rarr;</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+
+    {% endif %}
+
+</div>
+{% endblock %}

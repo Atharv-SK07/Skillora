@@ -1,0 +1,571 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if data['has_active_career'] %}{{ data['career']['title'] }} Progress &amp; Analytics{% else %}Progress &amp; Analytics{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1050px; padding: 2rem 1rem 4rem;">
+
+    {% if not data['has_active_career'] %}
+        <!-- Empty State: No Career Selected -->
+        <div class="empty-state" style="background: var(--color-surface); padding: 3rem 2rem; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; margin-top: 2rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 1rem;">📈</div>
+            <h1 style="font-size: 1.75rem; color: var(--color-primary); margin-bottom: 0.5rem;">Select a Career to View Progress &amp; Analytics</h1>
+            <p style="color: var(--color-text-muted); max-width: 540px; margin: 0 auto 1.5rem; line-height: 1.6;">
+                Analytics, skill gap charts, and readiness calculations are calibrated directly to your target career requirements.
+            </p>
+            <a href="{{ url_for('main.careers') }}" class="btn btn-primary">
+                Explore Careers &rarr;
+            </a>
+        </div>
+    {% else %}
+        <!-- Header & Action Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <a href="{{ url_for('main.dashboard') }}" style="font-size: 0.9rem; color: var(--color-text-muted); display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
+                    &larr; Back to Dashboard
+                </a>
+                <h1 style="display: flex; align-items: center; gap: 0.6rem; font-size: 1.85rem; color: var(--color-primary);">
+                    <span>{{ data['career']['icon'] }}</span>
+                    <span>{{ data['career']['title'] }} Progress &amp; Analytics</span>
+                </h1>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem; margin-top: 0.2rem;">
+                    Objective measurement of verified skills, target attainment, roadmap progress, and assessment history.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <a href="{{ url_for('analytics.report') }}" class="btn btn-outline btn-sm">
+                    📄 View Printable Report
+                </a>
+                <a href="{{ url_for('main.careers') }}" class="btn btn-outline btn-sm">
+                    Switch Career
+                </a>
+            </div>
+        </div>
+
+        <!-- Provisional Alert Banner -->
+        {% if data['readiness'] and data['readiness']['is_provisional'] %}
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+            <span style="font-size: 1.5rem; line-height: 1;">⚠️</span>
+            <div style="font-size: 0.9rem; color: #92400e;">
+                <strong style="color: #78350f;">Provisional Career Readiness Notice:</strong>
+                Your current assessment coverage is <strong>{{ data['readiness']['coverage_percentage'] }}%</strong> (less than the 70% definitive threshold).
+                {{ data['readiness']['assessed_skills_count'] }} of {{ data['readiness']['total_skills_count'] }} required skills have been assessed.
+                Take remaining <a href="{{ url_for('assessment.index') }}" style="color: #b45309; text-decoration: underline; font-weight: 600;">skill assessments</a> to establish definitive readiness.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- KPI Metric Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <!-- Career Readiness -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow);">
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem;">
+                    Career Readiness
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.1;">
+                    {{ data['readiness']['readiness_score'] if data['readiness'] else 0 }}%
+                </div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.35rem;">
+                    {% if data['readiness'] and data['readiness']['is_provisional'] %}
+                        <span style="color: #d97706; font-weight: 600;">Provisional (&lt;70% coverage)</span>
+                    {% else %}
+                        <span style="color: var(--color-success); font-weight: 600;">Definitive Assessment</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Assessment Coverage -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow);">
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem;">
+                    Assessment Coverage
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.1;">
+                    {{ data['readiness']['coverage_percentage'] if data['readiness'] else 0 }}%
+                </div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.35rem;">
+                    {{ data['readiness']['assessed_skills_count'] if data['readiness'] else 0 }}/{{ data['readiness']['total_skills_count'] if data['readiness'] else 0 }} skills assessed
+                </div>
+            </div>
+
+            <!-- Roadmap Progress -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow);">
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem;">
+                    Roadmap Completion
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--color-accent); line-height: 1.1;">
+                    {{ data['roadmap']['overall_progress'] if data['roadmap'] else 0 }}%
+                </div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.35rem;">
+                    {{ data['roadmap']['completed_tasks'] if data['roadmap'] else 0 }}/{{ data['roadmap']['total_tasks'] if data['roadmap'] else 0 }} tasks finished
+                </div>
+            </div>
+
+            <!-- Total Completed Assessments -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow);">
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: var(--color-text-muted); margin-bottom: 0.25rem;">
+                    Completed Assessments
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary); line-height: 1.1;">
+                    {{ data['total_assessments_count'] }}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.35rem;">
+                    Historical test attempts recorded
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            
+            <!-- Chart 1: Skill Target vs Current Estimate -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--color-primary); margin: 0;">
+                        🎯 Target vs. Current Proficiency
+                    </h3>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">Scale: 1 to 5</span>
+                </div>
+                
+                <div style="position: relative; height: 280px; width: 100%;">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+                
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.75rem; border-top: 1px solid var(--color-border-light); padding-top: 0.5rem;">
+                    * Unassessed skills are omitted from the estimate series and <strong>never plotted as zero</strong>.
+                </div>
+            </div>
+
+            <!-- Chart 2: Roadmap Stage Completion -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--color-primary); margin: 0;">
+                        🛤️ Roadmap Stage Progress
+                    </h3>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">Learn &rarr; Practice &rarr; Build &rarr; Review</span>
+                </div>
+
+                <div style="position: relative; height: 280px; width: 100%;">
+                    <canvas id="stagesChart"></canvas>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; font-size: 0.8rem; border-top: 1px solid var(--color-border-light); padding-top: 0.5rem;">
+                    {% if data['roadmap'] %}
+                    {% for sk, s_data in data['roadmap']['stages'].items() %}
+                    <span style="color: var(--color-text);">
+                        <strong>{{ s_data['title'] }}:</strong> {{ s_data['completed'] }}/{{ s_data['total'] }} ({{ s_data['progress'] }}%)
+                    </span>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Chart 3: Assessment History Timeline (Full Width) -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <h3 style="font-size: 1.15rem; color: var(--color-primary); margin: 0;">
+                        📅 Assessment History &amp; Score Progression
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin: 0.2rem 0 0;">
+                        Actual completed test attempts plotted over time.
+                    </p>
+                </div>
+                <a href="{{ url_for('assessment.index') }}" class="btn btn-outline btn-sm">
+                    Take New Assessment
+                </a>
+            </div>
+
+            {% if data['has_timeline_trend'] %}
+            <div style="position: relative; height: 250px; width: 100%;">
+                <canvas id="timelineChart"></canvas>
+            </div>
+            {% else %}
+            <div style="background: var(--color-bg); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); padding: 2.5rem 1.5rem; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                <h4 style="font-size: 1.05rem; color: var(--color-primary); margin-bottom: 0.35rem;">
+                    More Assessments Needed for Trend Analytics
+                </h4>
+                <p style="font-size: 0.875rem; color: var(--color-text-muted); max-width: 500px; margin: 0 auto 1rem;">
+                    {% if data['total_assessments_count'] == 1 %}
+                        You have completed 1 assessment attempt. Complete at least one more assessment to generate an authentic performance trend line over time.
+                    {% else %}
+                        No completed assessment attempts recorded yet. Take your first skill assessment to begin tracking your score trajectory.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('assessment.index') }}" class="btn btn-primary btn-sm">
+                    Open Assessments &rarr;
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Detailed Skill Gap Analysis Table -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 2rem;">
+            <h3 style="font-size: 1.15rem; color: var(--color-primary); margin-bottom: 1rem;">
+                🔍 Detailed Skill Gaps &amp; Status
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--color-border); text-align: left; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase;">
+                            <th style="padding: 0.75rem 0.5rem;">Skill Name</th>
+                            <th style="padding: 0.75rem 0.5rem;">Role</th>
+                            <th style="padding: 0.75rem 0.5rem; text-align: center;">Target</th>
+                            <th style="padding: 0.75rem 0.5rem; text-align: center;">Estimate</th>
+                            <th style="padding: 0.75rem 0.5rem; text-align: center;">Remaining Gap</th>
+                            <th style="padding: 0.75rem 0.5rem;">Status</th>
+                            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in data['skills_data'] %}
+                        <tr style="border-bottom: 1px solid var(--color-border-light);">
+                            <td style="padding: 0.85rem 0.5rem; font-weight: 600; color: var(--color-text);">
+                                {{ s['skill_name'] }}
+                                <div style="font-size: 0.75rem; font-weight: normal; color: var(--color-text-muted);">
+                                    Weight: {{ s['importance_weight'] }}
+                                </div>
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem;">
+                                {% if s['is_core'] %}
+                                    <span style="font-size: 0.75rem; font-weight: 700; background: var(--color-bg-alt); color: var(--color-primary); padding: 0.2rem 0.45rem; border-radius: 4px;">Core</span>
+                                {% else %}
+                                    <span style="font-size: 0.75rem; color: var(--color-text-muted); background: var(--color-bg); padding: 0.2rem 0.45rem; border-radius: 4px;">Supplementary</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem; text-align: center; font-weight: 600;">
+                                Level {{ s['target_level'] }}
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem; text-align: center;">
+                                {% if s['is_assessed'] %}
+                                    <strong style="color: var(--color-primary);">{{ "%.1f"|format(s['current_estimate']) }}</strong>
+                                    <span style="font-size: 0.75rem; color: var(--color-text-muted);">/5</span>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted); font-style: italic;">Not Assessed</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem; text-align: center;">
+                                {% if s['status'] == 'target_met' %}
+                                    <span style="color: var(--color-success); font-weight: 600;">0.0 (Met)</span>
+                                {% elif s['status'] == 'gap_exists' %}
+                                    <span style="color: var(--color-accent); font-weight: 600;">-{{ s['gap'] }} levels</span>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted);">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem;">
+                                {% if s['status'] == 'target_met' %}
+                                    <span style="font-size: 0.75rem; font-weight: 600; background: var(--color-success-bg); color: var(--color-success); padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                                        ✓ Target Achieved
+                                    </span>
+                                {% elif s['status'] == 'gap_exists' %}
+                                    <span style="font-size: 0.75rem; font-weight: 600; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                                        ⚡ Focus Gap
+                                    </span>
+                                {% else %}
+                                    <span style="font-size: 0.75rem; font-weight: 500; background: var(--color-bg); color: var(--color-text-muted); padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                                        ○ Unassessed
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.85rem 0.5rem; text-align: right;">
+                                <a href="{{ url_for('assessment.take_assessment', skill_code=s['skill_code']) }}" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
+                                    {% if s['is_assessed'] %}Reassess{% else %}Assess{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Completed Project Milestones (Where real data exists) -->
+        {% if data['roadmap'] and data['roadmap']['completed_projects'] %}
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 2rem;">
+            <h3 style="font-size: 1.15rem; color: var(--color-primary); margin-bottom: 1rem;">
+                🏆 Completed Project Milestones
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for proj in data['roadmap']['completed_projects'] %}
+                <div style="background: var(--color-bg); border-left: 4px solid var(--color-accent); border-radius: var(--radius-xs); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--color-text);">{{ proj['title'] }}</div>
+                        <div style="font-size: 0.75rem; color: var(--color-text-muted);">Completed at {{ proj['completed_at'][:10] if proj['completed_at'] else 'Recently' }}</div>
+                    </div>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent); background: var(--color-accent-light); padding: 0.2rem 0.5rem; border-radius: 4px;">
+                        Verified Milestone
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Chronological Assessment History Table -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+                <h3 style="font-size: 1.15rem; color: var(--color-primary); margin: 0;">
+                    📜 Completed Assessment History Log
+                </h3>
+                <span style="font-size: 0.8rem; color: var(--color-text-muted);">
+                    {{ data['history']|length }} attempt{% if data['history']|length != 1 %}s{% endif %}
+                </span>
+            </div>
+
+            {% if data['history'] %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--color-border); text-align: left; color: var(--color-text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                            <th style="padding: 0.6rem 0.5rem;">Date</th>
+                            <th style="padding: 0.6rem 0.5rem;">Skill</th>
+                            <th style="padding: 0.6rem 0.5rem; text-align: center;">Score</th>
+                            <th style="padding: 0.6rem 0.5rem; text-align: center;">Quiz (Q)</th>
+                            <th style="padding: 0.6rem 0.5rem; text-align: center;">Self (A)</th>
+                            <th style="padding: 0.6rem 0.5rem; text-align: center;">Combined (S)</th>
+                            <th style="padding: 0.6rem 0.5rem;">Discrepancy Note</th>
+                            <th style="padding: 0.6rem 0.5rem; text-align: right;">Review</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in data['history']|reverse %}
+                        <tr style="border-bottom: 1px solid var(--color-border-light);">
+                            <td style="padding: 0.75rem 0.5rem; color: var(--color-text-muted); white-space: nowrap;">
+                                {{ h['completed_at'][:10] if h['completed_at'] else 'N/A' }}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--color-primary);">
+                                {{ h['skill_name'] }}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; text-align: center; font-weight: 600;">
+                                {{ h['score_percentage'] }}%
+                                <span style="font-size: 0.75rem; color: var(--color-text-muted);">({{ h['correct_count'] }}/{{ h['total_questions'] }})</span>
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; text-align: center;">
+                                Level {{ h['quiz_proficiency'] }}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; text-align: center;">
+                                {% if h['self_assessed_level'] %}Level {{ h['self_assessed_level'] }}{% else %}&mdash;{% endif %}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; text-align: center; font-weight: 700; color: var(--color-accent);">
+                                {{ h['combined_estimate'] if h['combined_estimate'] else '&mdash;' }}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; font-size: 0.8rem; color: {% if h['has_discrepancy'] %}#b45309{% else %}var(--color-text-muted){% endif %};">
+                                {% if h['has_discrepancy'] %}
+                                    ⚠️ Discrepancy noted
+                                {% else %}
+                                    Aligned
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                                <a href="{{ url_for('assessment.view_attempt', attempt_id=h['attempt_id']) }}" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                                    View
+                                </a>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="background: var(--color-bg); padding: 1.5rem; border-radius: var(--radius-sm); text-align: center; color: var(--color-text-muted); font-size: 0.9rem;">
+                No assessment attempts recorded yet.
+            </div>
+            {% endif %}
+        </div>
+
+    {% endif %}
+
+</div>
+
+<!-- Load Chart.js from CDN with fallback handling -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js could not be loaded from CDN.');
+        return;
+    }
+
+    const chartData = {{ data['chart_data']|tojson }};
+    const hasTimeline = {{ 'true' if data['has_timeline_trend'] else 'false' }};
+
+    // 1. Target vs. Current Estimate Bar Chart
+    const skillsCanvas = document.getElementById('skillsChart');
+    if (skillsCanvas && chartData.skills && chartData.skills.labels.length > 0) {
+        new Chart(skillsCanvas, {
+            type: 'bar',
+            data: {
+                labels: chartData.skills.labels,
+                datasets: [
+                    {
+                        label: 'Career Target Level',
+                        data: chartData.skills.targets,
+                        backgroundColor: 'rgba(49, 46, 129, 0.25)',
+                        borderColor: 'rgba(49, 46, 129, 0.9)',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Your Current Estimate (S)',
+                        data: chartData.skills.currents,
+                        backgroundColor: 'rgba(249, 115, 22, 0.75)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 5,
+                        ticks: { stepSize: 1 }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.raw === null || context.raw === undefined) {
+                                    return context.dataset.label + ': Not Assessed';
+                                }
+                                return context.dataset.label + ': Level ' + context.raw;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Roadmap Stage Progress Chart (Horizontal Bar)
+    const stagesCanvas = document.getElementById('stagesChart');
+    if (stagesCanvas && chartData.roadmap_stages && chartData.roadmap_stages.labels.length > 0) {
+        new Chart(stagesCanvas, {
+            type: 'bar',
+            data: {
+                labels: chartData.roadmap_stages.labels,
+                datasets: [
+                    {
+                        label: 'Completed Tasks',
+                        data: chartData.roadmap_stages.completed,
+                        backgroundColor: 'rgba(22, 163, 74, 0.75)',
+                        borderColor: 'rgba(22, 163, 74, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Total Tasks',
+                        data: chartData.roadmap_stages.total,
+                        backgroundColor: 'rgba(203, 213, 225, 0.5)',
+                        borderColor: 'rgba(148, 163, 184, 0.8)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Assessment History Timeline Chart
+    const timelineCanvas = document.getElementById('timelineChart');
+    if (timelineCanvas && hasTimeline && chartData.history_timeline && chartData.history_timeline.labels.length >= 2) {
+        new Chart(timelineCanvas, {
+            type: 'line',
+            data: {
+                labels: chartData.history_timeline.labels,
+                datasets: [
+                    {
+                        label: 'Quiz Score (%)',
+                        data: chartData.history_timeline.scores,
+                        borderColor: 'rgba(49, 46, 129, 0.9)',
+                        backgroundColor: 'rgba(49, 46, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.25,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Proficiency Level (1-5)',
+                        data: chartData.history_timeline.proficiencies,
+                        borderColor: 'rgba(249, 115, 22, 0.9)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        min: 0,
+                        max: 100,
+                        ticks: { callback: v => v + '%' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        min: 1,
+                        max: 5,
+                        grid: { drawOnChartArea: false },
+                        ticks: { stepSize: 1, callback: v => 'L' + v }
+                    },
+                    x: {
+                        ticks: { font: { size: 10 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

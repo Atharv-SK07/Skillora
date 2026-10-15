@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ career['title'] }} Requirements{% endblock %}
+
+{% block content %}
+<div class="container career-detail-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ url_for('main.careers') }}">← Back to Career Paths</a>
+    </div>
+
+    <!-- Career Profile Hero -->
+    <div class="career-detail-header card">
+        <div class="detail-header-main">
+            <div class="career-detail-icon">{{ career['icon'] }}</div>
+            <div>
+                <div class="detail-title-row">
+                    <h1 class="detail-title">{{ career['title'] }}</h1>
+                    {% if is_current %}
+                    <span class="active-tag">Your Active Target</span>
+                    {% endif %}
+                </div>
+                <p class="detail-desc">{{ career['description'] }}</p>
+            </div>
+        </div>
+        <div class="detail-header-actions">
+            {% if not is_current %}
+            <form method="POST" action="{{ url_for('main.select_career') }}">
+                <input type="hidden" name="career_id" value="{{ career['id'] }}">
+                <button type="submit" class="btn btn-primary btn-md">
+                    Set as Target Career
+                </button>
+            </form>
+            {% else %}
+            <button class="btn btn-disabled btn-md" disabled>
+                ✓ Active Target
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Skill Requirements Section -->
+    <div class="requirements-section">
+        <div class="requirements-header">
+            <div>
+                <h2 class="section-title-left">Required Skills &amp; Proficiency Targets</h2>
+                <p class="section-subtitle">
+                    Assessed on a 1–5 proficiency scale (0 is reserved exclusively for unassessed skills). Higher importance weights correspond to critical core requirements.
+                </p>
+            </div>
+            <div class="scale-legend">
+                <span class="legend-badge">Level 1: Novice</span>
+                <span class="legend-badge">Level 2: Advanced Beginner</span>
+                <span class="legend-badge">Level 3: Competent</span>
+                <span class="legend-badge">Level 4: Proficient</span>
+                <span class="legend-badge">Level 5: Expert</span>
+            </div>
+        </div>
+
+        <div class="requirements-table-wrapper card">
+            <table class="requirements-table">
+                <thead>
+                    <tr>
+                        <th>Skill</th>
+                        <th>Category</th>
+                        <th>Classification</th>
+                        <th>Target Level</th>
+                        <th>Importance Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requirements %}
+                    <tr>
+                        <td>
+                            <div class="skill-name-col">
+                                <span class="skill-title">{{ req['skill_name'] }}</span>
+                                <span class="skill-desc">{{ req['description'] }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="category-pill">{{ req['category'] }}</span>
+                        </td>
+                        <td>
+                            {% if req['is_core'] == 1 %}
+                            <span class="badge-core">Core</span>
+                            {% else %}
+                            <span class="badge-supplementary">Supplementary</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="level-indicator">
+                                <span class="level-badge">Level {{ req['target_level'] }} / 5</span>
+                                <div class="mini-bar-track">
+                                    <div class="mini-bar-fill" style="width: {{ (req['target_level'] / 5) * 100 }}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="weight-badge">Weight {{ req['importance_weight'] }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

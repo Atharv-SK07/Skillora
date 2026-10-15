@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Welcome back, {{ g.user['full_name'] }}!</h1>
+            <p class="dashboard-subtitle">
+                {% if active_career %}
+                    Target career: <span class="career-badge-inline">{{ active_career['icon'] or '🎯' }} {{ active_career['career_path'] }}</span>
+                {% else %}
+                    Ready to start your career readiness journey?
+                {% endif %}
+            </p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-sm">
+                {% if active_career %}Change Target Career{% else %}Explore &amp; Select Career{% endif %}
+            </a>
+            {% if g.user['is_demo_account'] %}
+            <span class="demo-badge">Demo Account</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Career Path Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <span class="card-icon">🧭</span>
+                <h2 class="card-title">Career Path</h2>
+            </div>
+            <div class="card-body">
+                {% if active_career %}
+                    <p class="card-value">{{ active_career['icon'] or '🎯' }} {{ active_career['career_path'] }}</p>
+                    <p class="card-description">{{ active_career['description'] or "You are currently pursuing this career pathway." }}</p>
+                    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        {% if active_career['code'] %}
+                        <a href="{{ url_for('main.career_detail', career_code=active_career['code']) }}" class="btn btn-outline btn-sm">View Skill Requirements</a>
+                        {% endif %}
+                        <a href="{{ url_for('main.careers') }}" class="btn btn-sm" style="background: var(--color-bg-alt); color: var(--color-primary);">Switch Career</a>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p class="empty-state-text">No target career selected yet</p>
+                        <p class="empty-state-description">Select your target career path from our six supported tracks to discover required skills and prepare for assessment.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-sm">Explore Careers</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Skill Assessment Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <span class="card-icon">📊</span>
+                <h2 class="card-title">Skill Assessment &amp; Readiness</h2>
+            </div>
+            <div class="card-body">
+                {% if active_career and readiness and readiness['assessed_skills_count'] > 0 %}
+                    <div class="readiness-dashboard-metric">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                            <span class="card-value" style="margin-bottom: 0;">{{ readiness['readiness_score'] }}%</span>
+                            <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+                                {{ readiness['assessed_skills_count'] }}/{{ readiness['total_skills_count'] }} skills assessed
+                            </span>
+                        </div>
+                        <div class="mini-bar-track" style="height: 8px; margin-bottom: 0.75rem;">
+                            <div class="mini-bar-fill" style="width: {{ readiness['readiness_score'] }}%;"></div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
+                            <span class="coverage-badge">Coverage: {{ readiness['coverage_percentage'] }}%</span>
+                            {% if readiness['is_provisional'] %}
+                            <span class="provisional-pill" title="Readiness is provisional until assessment coverage reaches at least 70%">
+                                Provisional (&lt;70% Coverage)
+                            </span>
+                            {% else %}
+                            <span class="status-pill status-active">Definitive Assessment</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="card-description" style="margin-bottom: 1rem;">
+                            Weighted attainment calculated across verified quiz performance and self-assessments.
+                        </p>
+                        <a href="{{ url_for('assessment.index') }}" class="btn btn-primary btn-sm">
+                            Open Skill Assessments →
+                        </a>
+                    </div>
+                {% elif active_career %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p class="empty-state-text">Ready to assess your skills</p>
+                        <p class="empty-state-description">Assess your proficiency in required skills for <strong>{{ active_career['career_path'] }}</strong> to calculate your career readiness score.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('assessment.index') }}" class="btn btn-primary btn-sm">Start Skill Assessment</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p class="empty-state-text">Select a career track first</p>
+                        <p class="empty-state-description">Once you select a career path, you can take skill assessments to determine your starting readiness.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-sm">Explore Careers</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Learning Roadmap Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <span class="card-icon">🗺️</span>
+                <h2 class="card-title">Learning Roadmap</h2>
+            </div>
+            <div class="card-body">
+                {% if active_career and roadmap %}
+                    <div class="roadmap-dashboard-metric">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                            <span class="card-value" style="margin-bottom: 0;">{{ roadmap['overall_progress'] }}%</span>
+                            <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+                                {{ roadmap['completed_tasks'] }}/{{ roadmap['total_tasks'] }} tasks completed
+                            </span>
+                        </div>
+                        <div class="mini-bar-track" style="height: 8px; margin-bottom: 0.75rem;">
+                            <div class="mini-bar-fill" style="width: {{ roadmap['overall_progress'] }}%;"></div>
+                        </div>
+
+                        <!-- Stage Progress Chips -->
+                        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                            {% for s_key, s_data in roadmap['stages'].items() %}
+                            <span class="badge" style="font-size: 0.75rem; background: var(--color-surface-subtle); border: 1px solid var(--color-border); padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                                {{ s_data['icon'] }} {{ s_data['title'] }}: <strong>{{ s_data['completed'] }}/{{ s_data['total'] }}</strong>
+                            </span>
+                            {% endfor %}
+                        </div>
+
+                        {% if roadmap['next_recommended_task'] %}
+                        <div style="background: rgba(108, 92, 231, 0.06); border-left: 3px solid var(--color-primary); padding: 0.5rem 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary); font-weight: 600;">
+                                Recommended Next Step ({{ roadmap['next_recommended_task']['stage']|title }})
+                            </div>
+                            <div style="font-size: 0.85rem; font-weight: 500; color: var(--color-navy); margin-top: 0.2rem;">
+                                {{ roadmap['next_recommended_task']['title'] }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <a href="{{ url_for('roadmap.index') }}" class="btn btn-primary btn-sm">
+                            Open Learning Roadmap →
+                        </a>
+                    </div>
+                {% elif active_career %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛤️</div>
+                        <p class="empty-state-text">Your roadmap is ready to explore</p>
+                        <p class="empty-state-description">Follow a structured <strong>Learn → Practice → Build → Review</strong> pathway designed for {{ active_career['career_path'] }}.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('roadmap.index') }}" class="btn btn-primary btn-sm">View Roadmap</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛤️</div>
+                        <p class="empty-state-text">Select a career track first</p>
+                        <p class="empty-state-description">Choose a target career path to unlock your personalized 4-stage learning roadmap.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-sm">Explore Careers</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <!-- Progress & Analytics Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <span class="card-icon">📈</span>
+                <h2 class="card-title">Progress &amp; Analytics</h2>
+            </div>
+            <div class="card-body">
+                {% if active_career %}
+                    <div class="analytics-dashboard-summary">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+                            <div style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.6rem; text-align: center;">
+                                <div style="font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Readiness</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">
+                                    {{ readiness['readiness_score'] if readiness else 0 }}%
+                                </div>
+                            </div>
+                            <div style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.6rem; text-align: center;">
+                                <div style="font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Coverage</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">
+                                    {{ readiness['coverage_percentage'] if readiness else 0 }}%
+                                </div>
+                            </div>
+                            <div style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.6rem; text-align: center;">
+                                <div style="font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Roadmap</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-accent);">
+                                    {{ roadmap['overall_progress'] if roadmap else 0 }}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="card-description" style="margin-bottom: 1rem; font-size: 0.85rem;">
+                            Interactive skill proficiency radar, roadmap stage breakdown, and verified assessment timeline.
+                        </p>
+
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="{{ url_for('analytics.index') }}" class="btn btn-primary btn-sm">
+                                View Analytics &amp; Charts &rarr;
+                            </a>
+                            <a href="{{ url_for('analytics.report') }}" class="btn btn-outline btn-sm">
+                                Progress Report
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p class="empty-state-text">Select a career to view analytics</p>
+                        <p class="empty-state-description">Skill gap charts and progress trends are calibrated to your chosen target career.</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="{{ url_for('main.careers') }}" class="btn btn-primary btn-sm">Explore Careers</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

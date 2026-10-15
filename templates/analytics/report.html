@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Progress Report &mdash; {{ report['user']['full_name'] }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; padding: 2rem 1rem 4rem;">
+
+    <!-- Print / Nav Toolbar -->
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <a href="{{ url_for('analytics.index') }}" style="font-size: 0.9rem; color: var(--color-text-muted); display: inline-flex; align-items: center; gap: 0.35rem;">
+            &larr; Back to Analytics
+        </a>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="window.print()" class="btn btn-primary btn-sm">
+                🖨️ Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Paper Container -->
+    <div style="background: white; border: 1px solid var(--color-border); border-radius: var(--radius); padding: 2.5rem; box-shadow: var(--shadow-md);">
+        
+        <!-- Report Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-primary); padding-bottom: 1.25rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">
+                    <span>🎯</span> Skillora Career Readiness Platform
+                </div>
+                <h1 style="font-size: 1.6rem; color: var(--color-text); margin: 0.35rem 0 0.2rem;">
+                    Student Career Readiness Progress Report
+                </h1>
+                <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                    Report Generated on <strong>{{ report['generated_at'] }}</strong>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 700; font-size: 1.05rem; color: var(--color-primary);">
+                    {{ report['user']['full_name'] }}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                    @{{ report['user']['username'] }} &bull; {{ report['user']['email'] }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-accent); font-weight: 600; margin-top: 0.25rem;">
+                    Logic Ninjas Verification
+                </div>
+            </div>
+        </div>
+
+        {% if not report['analytics']['has_active_career'] %}
+        <div style="text-align: center; padding: 2rem;">
+            <p style="color: var(--color-text-muted);">No active target career has been selected for this student account.</p>
+        </div>
+        {% else %}
+        {% set a = report['analytics'] %}
+
+        <!-- Executive Summary Banner -->
+        <div style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 2rem;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); letter-spacing: 0.05em; margin-bottom: 0.35rem;">
+                Target Career Path
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+                <h2 style="font-size: 1.35rem; color: var(--color-primary); margin: 0;">
+                    {{ a['career']['icon'] }} {{ a['career']['title'] }}
+                </h2>
+                <div style="display: flex; gap: 0.75rem;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary);">
+                        Readiness: {{ a['readiness']['readiness_score'] }}%
+                    </span>
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-text-muted);">
+                        Coverage: {{ a['readiness']['coverage_percentage'] }}%
+                    </span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-accent);">
+                        Roadmap: {{ a['roadmap']['overall_progress'] if a['roadmap'] else 0 }}%
+                    </span>
+                </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 0.35rem; line-height: 1.5;">
+                {{ a['career']['description'] }}
+            </p>
+        </div>
+
+        <!-- Priority Focus Gaps -->
+        {% if report['priority_gaps'] %}
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.4rem; margin-bottom: 0.85rem;">
+                1. Priority Development Gaps
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;">
+                {% for gap in report['priority_gaps'] %}
+                <div style="border: 1px solid var(--color-border); border-left: 3px solid var(--color-accent); border-radius: var(--radius-xs); padding: 0.75rem 1rem; background: var(--color-surface);">
+                    <div style="font-weight: 600; color: var(--color-text); font-size: 0.9rem;">
+                        {{ gap['skill_name'] }}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.2rem;">
+                        Target: Level {{ gap['target_level'] }} &bull; 
+                        {% if gap['is_assessed'] %}
+                            Current: Level {{ "%.1f"|format(gap['current_estimate']) }} (Gap: {{ gap['gap'] }})
+                        {% else %}
+                            <em>Unassessed Foundation</em>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Skill Requirements & Verified Standing Table -->
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.4rem; margin-bottom: 0.85rem;">
+                2. Complete Skill Requirements &amp; Proficiency Matrix
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--color-border); text-align: left; color: var(--color-text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                        <th style="padding: 0.5rem 0.25rem;">Skill</th>
+                        <th style="padding: 0.5rem 0.25rem;">Type</th>
+                        <th style="padding: 0.5rem 0.25rem; text-align: center;">Target</th>
+                        <th style="padding: 0.5rem 0.25rem; text-align: center;">Estimate</th>
+                        <th style="padding: 0.5rem 0.25rem; text-align: center;">Gap</th>
+                        <th style="padding: 0.5rem 0.25rem; text-align: right;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in a['skills_data'] %}
+                    <tr style="border-bottom: 1px solid var(--color-border-light);">
+                        <td style="padding: 0.6rem 0.25rem; font-weight: 600;">
+                            {{ s['skill_name'] }}
+                        </td>
+                        <td style="padding: 0.6rem 0.25rem; font-size: 0.75rem; color: var(--color-text-muted);">
+                            {{ 'Core' if s['is_core'] else 'Supplementary' }}
+                        </td>
+                        <td style="padding: 0.6rem 0.25rem; text-align: center;">
+                            Level {{ s['target_level'] }}
+                        </td>
+                        <td style="padding: 0.6rem 0.25rem; text-align: center;">
+                            {% if s['is_assessed'] %}
+                                Level {{ "%.1f"|format(s['current_estimate']) }}
+                            {% else %}
+                                <em>Unassessed</em>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.6rem 0.25rem; text-align: center;">
+                            {% if s['status'] == 'target_met' %}
+                                <span style="color: var(--color-success); font-weight: 600;">0.0 (Met)</span>
+                            {% elif s['status'] == 'gap_exists' %}
+                                <span style="color: var(--color-accent); font-weight: 600;">-{{ s['gap'] }}</span>
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.6rem 0.25rem; text-align: right;">
+                            {% if s['status'] == 'target_met' %}
+                                <span style="color: var(--color-success); font-weight: 600;">✓ Achieved</span>
+                            {% elif s['status'] == 'gap_exists' %}
+                                <span style="color: #c2410c; font-weight: 600;">⚡ Gap</span>
+                            {% else %}
+                                <span style="color: var(--color-text-muted);">○ Unassessed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Roadmap Stage Completion Summary -->
+        {% if a['roadmap'] %}
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.4rem; margin-bottom: 0.85rem;">
+                3. Learning Roadmap Stage Progress (Learn &rarr; Practice &rarr; Build &rarr; Review)
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                {% for sk, s_info in a['roadmap']['stages'].items() %}
+                <div style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-xs); padding: 0.75rem; text-align: center;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--color-primary);">{{ s_info['title'] }}</div>
+                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-text); margin: 0.2rem 0;">
+                        {{ s_info['completed'] }}/{{ s_info['total'] }}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">{{ s_info['progress'] }}% completed</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Assessment History Log -->
+        <div>
+            <h3 style="font-size: 1.1rem; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 0.4rem; margin-bottom: 0.85rem;">
+                4. Verified Assessment History Log
+            </h3>
+            {% if a['history'] %}
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--color-border); text-align: left; color: var(--color-text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                        <th style="padding: 0.4rem 0.25rem;">Date</th>
+                        <th style="padding: 0.4rem 0.25rem;">Skill</th>
+                        <th style="padding: 0.4rem 0.25rem; text-align: center;">Score</th>
+                        <th style="padding: 0.4rem 0.25rem; text-align: center;">Quiz</th>
+                        <th style="padding: 0.4rem 0.25rem; text-align: center;">Self-Rating</th>
+                        <th style="padding: 0.4rem 0.25rem; text-align: center;">Combined (S)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in a['history']|reverse %}
+                    <tr style="border-bottom: 1px solid var(--color-border-light);">
+                        <td style="padding: 0.5rem 0.25rem; color: var(--color-text-muted);">{{ h['completed_at'][:10] if h['completed_at'] else 'N/A' }}</td>
+                        <td style="padding: 0.5rem 0.25rem; font-weight: 600; color: var(--color-primary);">{{ h['skill_name'] }}</td>
+                        <td style="padding: 0.5rem 0.25rem; text-align: center;">{{ h['score_percentage'] }}%</td>
+                        <td style="padding: 0.5rem 0.25rem; text-align: center;">Level {{ h['quiz_proficiency'] }}</td>
+                        <td style="padding: 0.5rem 0.25rem; text-align: center;">Level {{ h['self_assessed_level'] if h['self_assessed_level'] else '&mdash;' }}</td>
+                        <td style="padding: 0.5rem 0.25rem; text-align: center; font-weight: 700;">{{ h['combined_estimate'] if h['combined_estimate'] else '&mdash;' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">No assessment attempts completed as of this reporting period.</p>
+            {% endif %}
+        </div>
+
+        {% endif %}
+
+        <!-- Report Sign-off Footer -->
+        <div style="margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); font-size: 0.75rem; color: var(--color-text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div>Skillora &mdash; Student Career-Readiness &amp; Skill-Gap Analysis</div>
+            <div>Built by <strong>Logic Ninjas</strong></div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+@media print {
+    body { background: white !important; }
+    .navbar, .footer, .no-print { display: none !important; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+}
+</style>
+{% endblock %}

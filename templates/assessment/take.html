@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Assessment: {{ skill['name'] }}{% endblock %}
+
+{% block content %}
+<div class="container assessment-take-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('assessment.index') }}">← Back to Assessments</a>
+    </div>
+
+    <!-- Assessment Intro Card -->
+    <div class="card quiz-intro-card">
+        <div class="quiz-intro-header">
+            <div>
+                <span class="category-pill" style="margin-bottom: 0.5rem;">{{ skill['category'] }}</span>
+                <h1 class="page-title" style="margin-bottom: 0.35rem;">{{ skill['name'] }} Assessment</h1>
+                <p class="quiz-intro-desc">{{ skill['description'] }}</p>
+            </div>
+            {% if current_estimate %}
+            <div class="current-estimate-badge">
+                <span class="estimate-badge-label">Current Estimate</span>
+                <span class="estimate-badge-val">Level {{ current_estimate['current_estimate'] }}</span>
+                <span class="estimate-badge-sub">Q: {{ current_estimate['quiz_proficiency'] }} | A: {{ current_estimate['self_assessed_level'] or '—' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="quiz-instructions">
+            <span>ℹ️ <strong>Assessment Policy:</strong> {{ questions|length }} questions. Answer all questions to submit. Scoring maps to proficiency Levels 1–5. Combined estimate uses $S = 0.7Q + 0.3A$. Discrepancies ($|Q - A| \ge 2$) will be highlighted for guidance without forcing a retake.</span>
+        </div>
+    </div>
+
+    <!-- Quiz Form -->
+    <form method="POST" action="{{ url_for('assessment.take_assessment', skill_code=skill['code']) }}" class="quiz-form">
+        <!-- Self-Assessment Section -->
+        <div class="card self-assessment-card">
+            <h2 class="quiz-section-title">Step 1: Self-Assessment Rating (A)</h2>
+            <p class="quiz-section-desc">
+                Before answering the technical questions, how do you personally rate your current proficiency in <strong>{{ skill['name'] }}</strong>?
+            </p>
+
+            <div class="self-assessment-options">
+                <label class="self-rating-option">
+                    <input type="radio" name="self_assessed_level" value="1" {% if selected_self_assessed == 1 %}checked{% endif %}>
+                    <div class="option-card">
+                        <span class="rating-num">1</span>
+                        <strong class="rating-title">Novice</strong>
+                        <span class="rating-desc">Basic awareness, requires guidance</span>
+                    </div>
+                </label>
+
+                <label class="self-rating-option">
+                    <input type="radio" name="self_assessed_level" value="2" {% if selected_self_assessed == 2 %}checked{% endif %}>
+                    <div class="option-card">
+                        <span class="rating-num">2</span>
+                        <strong class="rating-title">Advanced Beginner</strong>
+                        <span class="rating-desc">Can perform fundamental tasks</span>
+                    </div>
+                </label>
+
+                <label class="self-rating-option">
+                    <input type="radio" name="self_assessed_level" value="3" {% if selected_self_assessed == 3 %}checked{% endif %}>
+                    <div class="option-card">
+                        <span class="rating-num">3</span>
+                        <strong class="rating-title">Competent</strong>
+                        <span class="rating-desc">Independent working proficiency</span>
+                    </div>
+                </label>
+
+                <label class="self-rating-option">
+                    <input type="radio" name="self_assessed_level" value="4" {% if selected_self_assessed == 4 %}checked{% endif %}>
+                    <div class="option-card">
+                        <span class="rating-num">4</span>
+                        <strong class="rating-title">Proficient</strong>
+                        <span class="rating-desc">Deep knowledge &amp; problem solving</span>
+                    </div>
+                </label>
+
+                <label class="self-rating-option">
+                    <input type="radio" name="self_assessed_level" value="5" {% if selected_self_assessed == 5 %}checked{% endif %}>
+                    <div class="option-card">
+                        <span class="rating-num">5</span>
+                        <strong class="rating-title">Expert</strong>
+                        <span class="rating-desc">Mastery &amp; architectural vision</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Technical Questions Section -->
+        <div class="quiz-questions-wrapper">
+            <h2 class="quiz-section-title" style="margin: 2rem 0 1rem;">Step 2: Technical Questions (Q)</h2>
+
+            {% for q in questions %}
+            <div class="card question-card" id="q-block-{{ q['id'] }}">
+                <div class="question-header">
+                    <span class="question-number">Question {{ loop.index }} of {{ questions|length }}</span>
+                    <span class="difficulty-tag">Difficulty Level {{ q['difficulty_level'] }}</span>
+                </div>
+
+                <p class="question-text">{{ q['question_text'] }}</p>
+
+                <div class="mcq-options-list">
+                    <label class="mcq-option-label">
+                        <input type="radio" name="question_{{ q['id'] }}" value="A"
+                               {% if selected_answers.get(q['id']) == 'A' %}checked{% endif %} required>
+                        <span class="mcq-option-letter">A</span>
+                        <span class="mcq-option-content">{{ q['option_a'] }}</span>
+                    </label>
+
+                    <label class="mcq-option-label">
+                        <input type="radio" name="question_{{ q['id'] }}" value="B"
+                               {% if selected_answers.get(q['id']) == 'B' %}checked{% endif %}>
+                        <span class="mcq-option-letter">B</span>
+                        <span class="mcq-option-content">{{ q['option_b'] }}</span>
+                    </label>
+
+                    <label class="mcq-option-label">
+                        <input type="radio" name="question_{{ q['id'] }}" value="C"
+                               {% if selected_answers.get(q['id']) == 'C' %}checked{% endif %}>
+                        <span class="mcq-option-letter">C</span>
+                        <span class="mcq-option-content">{{ q['option_c'] }}</span>
+                    </label>
+
+                    <label class="mcq-option-label">
+                        <input type="radio" name="question_{{ q['id'] }}" value="D"
+                               {% if selected_answers.get(q['id']) == 'D' %}checked{% endif %}>
+                        <span class="mcq-option-letter">D</span>
+                        <span class="mcq-option-content">{{ q['option_d'] }}</span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Submit Bar -->
+        <div class="quiz-submit-bar card">
+            <div>
+                <strong>Ready to evaluate?</strong>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 0.15rem;">
+                    Your answers will be validated server-side. Submitting updates your current proficiency estimate while saving your attempt history.
+                </p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Submit Assessment</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

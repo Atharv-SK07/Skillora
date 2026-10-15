@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Results: {{ attempt['skill_name'] }}{% endblock %}
+
+{% block content %}
+<div class="container assessment-result-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('assessment.index') }}">← Back to Assessments</a>
+    </div>
+
+    <!-- Results Hero Card -->
+    <div class="card result-hero-card">
+        <div class="result-hero-top">
+            <div>
+                <span class="category-pill" style="margin-bottom: 0.5rem;">{{ attempt['category'] }}</span>
+                <h1 class="page-title" style="margin-bottom: 0.35rem;">{{ attempt['skill_name'] }} Result</h1>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+                    Completed on {{ attempt['completed_at'] }}
+                </p>
+            </div>
+            <div class="result-score-circle">
+                <span class="score-pct">{{ attempt['score_percentage'] }}%</span>
+                <span class="score-fraction">{{ attempt['correct_count'] }} of {{ attempt['total_questions'] }} correct</span>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="result-metrics-grid">
+            <div class="metric-box">
+                <span class="metric-label">Quiz Proficiency (Q)</span>
+                <span class="metric-val">Level {{ attempt['quiz_proficiency'] }}</span>
+                <span class="metric-sub">{{ proficiency_levels.get(attempt['quiz_proficiency']) }}</span>
+            </div>
+
+            <div class="metric-box">
+                <span class="metric-label">Self-Assessment (A)</span>
+                {% if attempt['self_assessed_level'] %}
+                <span class="metric-val">Level {{ attempt['self_assessed_level'] }}</span>
+                <span class="metric-sub">{{ proficiency_levels.get(attempt['self_assessed_level']) }}</span>
+                {% else %}
+                <span class="metric-val" style="color: var(--color-text-muted);">—</span>
+                <span class="metric-sub">Not submitted</span>
+                {% endif %}
+            </div>
+
+            <div class="metric-box metric-box-highlight">
+                <span class="metric-label">Combined Estimate (S)</span>
+                {% if attempt['combined_estimate'] %}
+                <span class="metric-val text-accent">Level {{ attempt['combined_estimate'] }}</span>
+                <span class="metric-sub">$S = 0.7Q + 0.3A$</span>
+                {% else %}
+                <span class="metric-val">Level {{ attempt['quiz_proficiency'] }}.0</span>
+                <span class="metric-sub">Quiz-only baseline</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Discrepancy Alert / Notice -->
+        {% if attempt['has_discrepancy'] %}
+        <div class="discrepancy-alert-box">
+            <div class="discrepancy-alert-icon">⚠️</div>
+            <div>
+                <strong>Self-Assessment vs Quiz Discrepancy (|Q - A| &ge; 2)</strong>
+                <p style="margin-top: 0.25rem; font-size: 0.925rem;">
+                    {{ attempt['discrepancy_message'] }}
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="alignment-notice-box">
+            <div class="alignment-icon">✓</div>
+            <div>
+                <strong>Consistent Self-Awareness</strong>
+                <p style="margin-top: 0.25rem; font-size: 0.925rem;">
+                    {{ attempt['discrepancy_message'] or "Your quiz performance and self-assessed rating are closely aligned." }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem;">
+            <a href="{{ url_for('assessment.take_assessment', skill_code=attempt['skill_code']) }}" class="btn btn-primary btn-md">
+                Reassess This Skill
+            </a>
+            <a href="{{ url_for('assessment.index') }}" class="btn btn-outline btn-md">
+                View All Assessments
+            </a>
+        </div>
+    </div>
+
+    <!-- Question by Question Breakdown -->
+    <div class="answers-review-section">
+        <h2 class="section-title-left" style="margin-bottom: 1.25rem;">Question-by-Question Review</h2>
+
+        {% for ans in answers %}
+        <div class="card answer-review-card {% if ans['is_correct'] %}answer-correct{% else %}answer-incorrect{% endif %}">
+            <div class="answer-review-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    {% if ans['is_correct'] %}
+                    <span class="badge-status-correct">✓ Correct</span>
+                    {% else %}
+                    <span class="badge-status-incorrect">✗ Incorrect</span>
+                    {% endif %}
+                    <span style="font-weight: 600; color: var(--color-primary);">Question {{ loop.index }}</span>
+                </div>
+                <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+                    Your answer: <strong>Option {{ ans['selected_option'] }}</strong>
+                    {% if not ans['is_correct'] %} &bull; Correct: <strong>Option {{ ans['correct_option'] }}</strong>{% endif %}
+                </span>
+            </div>
+
+            <p class="question-text" style="margin-bottom: 1rem;">{{ ans['question_text'] }}</p>
+
+            <div class="options-review-grid">
+                <div class="opt-review-item {% if ans['selected_option'] == 'A' and ans['is_correct'] %}opt-correct{% elif ans['selected_option'] == 'A' %}opt-chosen-wrong{% elif ans['correct_option'] == 'A' %}opt-target-correct{% endif %}">
+                    <strong>A:</strong> {{ ans['option_a'] }}
+                </div>
+                <div class="opt-review-item {% if ans['selected_option'] == 'B' and ans['is_correct'] %}opt-correct{% elif ans['selected_option'] == 'B' %}opt-chosen-wrong{% elif ans['correct_option'] == 'B' %}opt-target-correct{% endif %}">
+                    <strong>B:</strong> {{ ans['option_b'] }}
+                </div>
+                <div class="opt-review-item {% if ans['selected_option'] == 'C' and ans['is_correct'] %}opt-correct{% elif ans['selected_option'] == 'C' %}opt-chosen-wrong{% elif ans['correct_option'] == 'C' %}opt-target-correct{% endif %}">
+                    <strong>C:</strong> {{ ans['option_c'] }}
+                </div>
+                <div class="opt-review-item {% if ans['selected_option'] == 'D' and ans['is_correct'] %}opt-correct{% elif ans['selected_option'] == 'D' %}opt-chosen-wrong{% elif ans['correct_option'] == 'D' %}opt-target-correct{% endif %}">
+                    <strong>D:</strong> {{ ans['option_d'] }}
+                </div>
+            </div>
+
+            {% if ans['explanation'] %}
+            <div class="explanation-box">
+                <strong>Explanation:</strong> {{ ans['explanation'] }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
